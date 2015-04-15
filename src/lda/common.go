@@ -1,9 +1,9 @@
 package lda
 
-import "rand"
+import "math/rand"
 
 type Distribution []float64
-type Histogram    []int
+type Histogram []int
 
 func NewDistribution(dim int) Distribution {
 	return make(Distribution, dim)
@@ -18,7 +18,7 @@ func (d Distribution) IsValid() bool {
 	for _, v := range d {
 		sum += v
 	}
-	return (sum - 1)*(sum - 1) < 0.00001
+	return (sum-1)*(sum-1) < 0.00001
 }
 
 func GetAccumulativeSample(distribution Distribution) int {
@@ -32,8 +32,8 @@ func GetAccumulativeSample(distribution Distribution) int {
 	for i, v := range distribution {
 		sum_so_far += v
 		if sum_so_far >= choice {
-			return i;
+			return i
 		}
 	}
-	return -1;
+	return -1
 }

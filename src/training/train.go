@@ -4,21 +4,21 @@ import (
 	"flag"
 	"fmt"
 	"lda"
-	"rand"
+	"math/rand"
 	"time"
 )
 
 var (
-	num_topics = flag.Int("num_topics", 2, "The number of topics expected in trained model")
-	topic_prior = flag.Float64("topic_prior", 0.1, "The parameter of symmetric Dirichlet on topics")
-	word_prior = flag.Float64("word_prior", 0.01, "The parameter of symmetric Dirichlet on words")
-	corpus_file = flag.String("corpus_file", "", "The (input) training data file")
-	model_file = flag.String("model_file", "", "The (output) model file")
-        burn_in_iterations = flag.Int("burn_in_iterations", 50,
+	num_topics         = flag.Int("num_topics", 2, "The number of topics expected in trained model")
+	topic_prior        = flag.Float64("topic_prior", 0.1, "The parameter of symmetric Dirichlet on topics")
+	word_prior         = flag.Float64("word_prior", 0.01, "The parameter of symmetric Dirichlet on words")
+	corpus_file        = flag.String("corpus_file", "", "The (input) training data file")
+	model_file         = flag.String("model_file", "", "The (output) model file")
+	burn_in_iterations = flag.Int("burn_in_iterations", 50,
 		"The number of Gibbs sampling iterations for burning in the MCMC")
-        accumulate_iterations = flag.Int("accumulate_iterations", 10,
+	accumulate_iterations = flag.Int("accumulate_iterations", 10,
 		"The number of Gibbs sampling iterations for accumulating the sampling results")
-        compute_loglikelihood = flag.Bool("compute_loglikelihood", true,
+	compute_loglikelihood = flag.Bool("compute_loglikelihood", true,
 		"Whether to compute and output the likelihood after each Gibbs sampling iteration")
 )
 
@@ -62,11 +62,11 @@ func main() {
 		return
 	}
 
-	rand.Seed(time.Nanoseconds())
+	rand.Seed(time.Now().UTC().UnixNano())
 
 	corpus, err := lda.LoadCorpus(*corpus_file, 2)
 	if err != nil {
-		fmt.Printf("Error in loading: " + *corpus_file + ", due to " + err.String())
+		fmt.Printf("Error in loading: " + *corpus_file + ", due to " + err.Error())
 		return
 	}
 
@@ -74,9 +74,9 @@ func main() {
 	accum_model := lda.NewModel(*num_topics)
 	sampler := lda.NewSampler(*topic_prior, *word_prior, model, accum_model)
 
-	for iter := 0; iter < *burn_in_iterations + *accumulate_iterations; iter++ {
+	for iter := 0; iter < *burn_in_iterations+*accumulate_iterations; iter++ {
 		fmt.Printf("Iteration %d ... ", iter)
-		if (*compute_loglikelihood) {
+		if *compute_loglikelihood {
 			fmt.Printf("log-likelihood: %f\n", sampler.CorpusLogLikelihood(corpus))
 		} else {
 			fmt.Printf("\n")
@@ -85,9 +85,8 @@ func main() {
 	}
 
 	if err := accum_model.SaveModel(*model_file); err != nil {
-		fmt.Printf("Cannot save model due to " + err.String())
+		fmt.Printf("Cannot save model due to " + err.Error())
 	}
 
 	return
 }
-

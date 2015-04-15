@@ -42,21 +42,21 @@ func TestWordIterator(t *testing.T) {
 	}
 	if iter.Topic() != 0 || iter.Word() != "apple" {
 		t.Errorf(fmt.Sprintf("iter.Topic() = %d, iter.Word() = %s.",
-			iter.Topic(), iter.Word()));
+			iter.Topic(), iter.Word()))
 	}
 	if iter.Next(); iter.Done() {
 		t.Errorf("Unexpected iter.Done()")
 	}
 	if iter.Topic() != 0 || iter.Word() != "apple" {
 		t.Errorf(fmt.Sprintf("iter.Topic() = %d, iter.Word() = %s.",
-			iter.Topic(), iter.Word()));
+			iter.Topic(), iter.Word()))
 	}
 	if iter.Next(); iter.Done() {
 		t.Errorf("Unexpected iter.Done()")
 	}
 	if iter.Topic() != 0 || iter.Word() != "orange" {
 		t.Errorf(fmt.Sprintf("iter.Topic() = %d, iter.Word() = %s.",
-			iter.Topic(), iter.Word()));
+			iter.Topic(), iter.Word()))
 	}
 	if iter.Next(); !iter.Done() {
 		t.Errorf("Expecting iter.Done(), but iter.Done() == false")

@@ -70,11 +70,11 @@ func TestCreateModel(t *testing.T) {
 
 func TestAccumulateModel(t *testing.T) {
 	model_1 := NewModel(2)
-	model_1.IncrementTopic("apple", 0, 1);
-	model_1.IncrementTopic("orange", 0, 1);
+	model_1.IncrementTopic("apple", 0, 1)
+	model_1.IncrementTopic("orange", 0, 1)
 
 	model_2 := NewModel(2)
-	model_2.IncrementTopic("orange", 1, 1);
+	model_2.IncrementTopic("orange", 1, 1)
 	model_2.AccumulateModel(model_1)
 
 	const kModelGoFmt = "{map[orange:[1 1] apple:[1 0]] [2 1] [0 0]}"

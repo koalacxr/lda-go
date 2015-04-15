@@ -35,8 +35,8 @@ func (sampler *Sampler) GenerateTopicDistributionForWord(doc *Document,
 		global_topic_factor := float64(sampler.model.GetGlobalTopicHistogram()[k] + adjustment)
 		document_topic_factor := float64(doc.topic_histogram[k] + adjustment)
 		distribution[k] = (topic_word_factor + sampler.word_prior) *
-                        (document_topic_factor + sampler.topic_prior) /
-                        (global_topic_factor + float64(num_words) * sampler.word_prior)
+			(document_topic_factor + sampler.topic_prior) /
+			(global_topic_factor + float64(num_words)*sampler.word_prior)
 	}
 	return distribution
 }
@@ -47,14 +47,14 @@ func (sampler *Sampler) DocumentGibbsSampling(doc *Document, update_model bool) 
 		// select the new topic for the current word occurrence.
 		new_topic_distribution := sampler.GenerateTopicDistributionForWord(
 			doc, iter.Word(), iter.Topic(), update_model)
-		new_topic := GetAccumulativeSample(new_topic_distribution);
+		new_topic := GetAccumulativeSample(new_topic_distribution)
 		if new_topic != -1 {
 			// If new_topic != -1 (i.e. GetAccumulativeSample) runs OK, we
 			// update document and model parameters with the new topic.
-			if (update_model) {
+			if update_model {
 				sampler.model.ReassignTopic(iter.Word(), iter.Topic(), new_topic)
 			}
-			iter.SetTopic(new_topic);
+			iter.SetTopic(new_topic)
 		} else {
 			panic(fmt.Sprintf("Cannot sample from: %v", new_topic_distribution))
 		}
@@ -77,7 +77,7 @@ func (sampler *Sampler) DocumentLogLikelihood(doc *Document) float64 {
 
 	// Compute P(z|d) for the given document and all topics.
 	prob_topic_given_document := NewDistribution(num_topics)
-	smoothed_doc_length := float64(doc_length) + sampler.topic_prior * float64(num_topics)
+	smoothed_doc_length := float64(doc_length) + sampler.topic_prior*float64(num_topics)
 	for i, v := range doc.topic_histogram {
 		prob_topic_given_document[i] = (float64(v) + sampler.topic_prior) / smoothed_doc_length
 	}
@@ -85,7 +85,7 @@ func (sampler *Sampler) DocumentLogLikelihood(doc *Document) float64 {
 	// Get global topic occurrences, which will be used to compute P(w|z).
 	global_topic_histogram := sampler.model.GetGlobalTopicHistogram()
 	prob_word_given_topic := NewDistribution(num_topics)
-	log_likelihood := 0.0;
+	log_likelihood := 0.0
 
 	// A document's log-likelihood is the sum of log-likelihoods
 	// of its words.  Compute the likelihood for every word and
@@ -99,7 +99,7 @@ func (sampler *Sampler) DocumentLogLikelihood(doc *Document) float64 {
 		for t := 0; t < num_topics; t++ {
 			prob_word_given_topic[t] =
 				(float64(word_topic_histogram[t]) + sampler.word_prior) /
-				(float64(global_topic_histogram[t]) + float64(doc.Length()) * sampler.word_prior)
+					(float64(global_topic_histogram[t]) + float64(doc.Length())*sampler.word_prior)
 		}
 
 		// Compute P(w) = sum_z P(w|z)P(z|d)
@@ -107,7 +107,7 @@ func (sampler *Sampler) DocumentLogLikelihood(doc *Document) float64 {
 		for t := 0; t < num_topics; t++ {
 			prob_word += prob_word_given_topic[t] * prob_topic_given_document[t]
 		}
-		log_likelihood += math.Log(prob_word);
+		log_likelihood += math.Log(prob_word)
 	}
 
 	return log_likelihood

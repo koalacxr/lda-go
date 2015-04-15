@@ -2,14 +2,16 @@ package lda
 
 import (
 	"bufio"
+	"errors"
+	"io"
+	// "encoding/line"
 	"fmt"
-	"encoding/line"
 	"os"
-	"strings"
 	"sort"
+	"strings"
 )
 
-const kMaxCorpusFileLineLength = 1024 * 1024
+// const kMaxCorpusFileLineLength = 1024 * 1024
 
 // Document contains some unique words, each has one or more
 // occurrences in this document.  Each occurrence has a topic
@@ -38,12 +40,12 @@ type WordIterator struct {
 	word_topic_index  int // Index in doc.wordtopics.
 }
 
-func NewWordIterator(d *Document) (iter *WordIterator, err os.Error) {
+func NewWordIterator(d *Document) (iter *WordIterator, err error) {
 	if d == nil {
-		return nil, os.NewError("NewWordIterator with a nil *Document")
+		return nil, errors.New("NewWordIterator with a nil *Document")
 	}
 	if !d.IsValid() {
-		return nil, os.NewError(
+		return nil, errors.New(
 			"NewWordIterator with an invalid Document")
 	}
 	iter = &WordIterator{d, 0, 0}
@@ -100,20 +102,19 @@ func (iter WordIterator) Word() string {
 	return iter.doc.unique_words[iter.unique_word_index]
 }
 
-
 // Parse a text string, words seprated by whitespaces, and create a
 // Document instance.  In order to initialize topic_histogram, this
 // function requires the number_of_topics.
-func NewDocument(text string, num_topics int) (doc *Document, err os.Error) {
+func NewDocument(text string, num_topics int) (doc *Document, err error) {
 	if num_topics <= 1 {
-		return nil, os.NewError("num_topics must be >= 2")
+		return nil, errors.New("num_topics must be >= 2")
 	}
 
 	words := strings.Fields(text)
 	if len(words) <= 1 {
-		return nil, os.NewError("Document less than 2 words:" + text)
+		return nil, errors.New("Document less than 2 words:" + text)
 	}
-	sort.SortStrings(words)
+	sort.Strings(words)
 
 	doc = new(Document)
 	doc.wordtopics = make([]int, len(words))
@@ -132,7 +133,7 @@ func NewDocument(text string, num_topics int) (doc *Document, err os.Error) {
 	}
 
 	if !doc.IsValid() {
-		return nil, os.NewError("Document is invalid")
+		return nil, errors.New("Document is invalid")
 	}
 	return
 }
@@ -152,37 +153,37 @@ func NewCorpus() *Corpus {
 	return &Corpus{}
 }
 
-func LoadCorpus(filename string, num_topics int) (corpus *Corpus, err os.Error) {
-	file, err := os.Open(filename, 0, 0)
+func LoadCorpus(filename string, num_topics int) (corpus *Corpus, err error) {
+	file, err := os.OpenFile(filename, 0, 0)
 	if err != nil {
-		return nil, os.NewError("Cannot open file: " + filename)
+		return nil, errors.New("Cannot open file: " + filename)
 	}
 	defer file.Close()
 
 	corpus = NewCorpus()
-	reader := line.NewReader(bufio.NewReader(file), kMaxCorpusFileLineLength)
+	reader := bufio.NewReader(file)
 	l, is_prefix, err := reader.ReadLine()
 	for err == nil {
 		line := string(l)
 
 		if is_prefix {
-			return nil, os.NewError("Encountered a long line:" + line)
+			return nil, errors.New("Encountered a long line:" + line)
 		}
 
-		if len(l) > 1 {		// skip empty lines
+		if len(l) > 1 { // skip empty lines
 			doc, err := NewDocument(line, num_topics)
 			if err == nil {
 				*corpus = append(*corpus, doc)
 			} else {
-				panic("Cannot create document from: " + line + " due to " + err.String())
+				panic("Cannot create document from: " + line + " due to " + err.Error())
 			}
 		}
 
 		l, _, err = reader.ReadLine()
 	}
 
-	if err != os.EOF {
-		return nil, os.NewError("Error reading: " + filename + err.String())
+	if err != io.EOF {
+		return nil, errors.New("Error reading: " + filename + err.Error())
 	}
 	return corpus, nil
 }

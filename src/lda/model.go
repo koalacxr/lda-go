@@ -2,14 +2,16 @@ package lda
 
 import (
 	"bufio"
+	"errors"
+	"io"
+	// "encoding/line"
 	"fmt"
-	"encoding/line"
 	"os"
-	"strings"
 	"strconv"
+	"strings"
 )
 
-const kMaxModelFileLineLength = 1024 * 1024 // at most 1MB per line
+// const kMaxModelFileLineLength = 1024 * 1024 // at most 1MB per line
 
 type Model struct {
 	topic_histograms map[string]Histogram
@@ -48,10 +50,10 @@ func CreateModel(num_topics int, corpus *Corpus) *Model {
 // is an integer, counting the number of times that word_x is assigned
 // topic_y.  Fields in a line are separated by one or more whitespaces.
 //
-func LoadModel(filename string) (model *Model, err os.Error) {
-	file, err := os.Open(filename, 0, 0)
+func LoadModel(filename string) (model *Model, err error) {
+	file, err := os.OpenFile(filename, 0, 0)
 	if err != nil {
-		return nil, os.NewError("Cannot open file: " + filename)
+		return nil, errors.New("Cannot open file: " + filename)
 	}
 	defer file.Close()
 
@@ -59,22 +61,22 @@ func LoadModel(filename string) (model *Model, err os.Error) {
 	model = new(Model)
 	model.topic_histograms = make(map[string]Histogram)
 
-	reader := line.NewReader(bufio.NewReader(file), kMaxModelFileLineLength)
+	reader := bufio.NewReader(file)
 	l, is_prefix, err := reader.ReadLine()
 	for err == nil {
 		line := string(l)
 
 		if is_prefix {
-			return nil, os.NewError("Encountered a long line:" + line)
+			return nil, errors.New("Encountered a long line:" + line)
 		}
 
 		fields := strings.Fields(line)
 		if len(fields) < 3 {
-			return nil, os.NewError("Invalid line: " + line)
+			return nil, errors.New("Invalid line: " + line)
 		}
 
 		if _, present := model.topic_histograms[fields[0]]; present {
-			return nil, os.NewError("Found duplicated word: " + fields[0])
+			return nil, errors.New("Found duplicated word: " + fields[0])
 		}
 
 		if num_topics == 0 {
@@ -82,15 +84,15 @@ func LoadModel(filename string) (model *Model, err os.Error) {
 			model.global_histogram = NewHistogram(num_topics)
 			model.zero_histogram = NewHistogram(num_topics)
 		} else if len(fields)-1 != num_topics {
-			return nil, os.NewError("Inconsistent num_topics: " + line)
+			return nil, errors.New("Inconsistent num_topics: " + line)
 		}
 
 		hist := NewHistogram(num_topics)
-		var conv_err os.Error
+		var conv_err error
 		for i := 0; i < num_topics; i++ {
 			hist[i], conv_err = strconv.Atoi(fields[i+1])
 			if conv_err != nil {
-				return nil, os.NewError("Failed conversion to int: " + fields[i+1])
+				return nil, errors.New("Failed conversion to int: " + fields[i+1])
 			}
 			model.global_histogram[i] += hist[i]
 		}
@@ -99,20 +101,20 @@ func LoadModel(filename string) (model *Model, err os.Error) {
 		l, _, err = reader.ReadLine()
 	}
 
-	if err != os.EOF {
-		return nil, os.NewError("Error reading: " + filename + err.String())
+	if err != io.EOF {
+		return nil, errors.New("Error reading: " + filename + err.Error())
 	}
 	if len(model.topic_histograms) <= 0 {
-		return nil, os.NewError("No valid line in file: " + filename)
+		return nil, errors.New("No valid line in file: " + filename)
 	}
 
 	return model, nil
 }
 
-func (model *Model) SaveModel(filename string) os.Error {
-	file, err := os.Open(filename, os.O_WRONLY|os.O_CREAT|os.O_TRUNC, 0666)
+func (model *Model) SaveModel(filename string) error {
+	file, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
 	if err != nil {
-		return os.NewError("Cannot open file: " + filename + " " + err.String())
+		return errors.New("Cannot open file: " + filename + " " + err.Error())
 	}
 	defer file.Close()
 
@@ -157,11 +159,11 @@ func (model *Model) ReassignTopic(word string, old_topic int, new_topic int) {
 }
 
 func (model *Model) GetWordTopicHistogram(word string) Histogram {
-	return model.topic_histograms[word];
+	return model.topic_histograms[word]
 }
 
 func (model *Model) GetGlobalTopicHistogram() Histogram {
-	return model.global_histogram;
+	return model.global_histogram
 }
 
 func (model *Model) AccumulateModel(m *Model) {
