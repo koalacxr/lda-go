@@ -1,0 +1,4 @@
+zebra 1 9
+apple 20 0
+orange 10 0
+jagar 0 10
