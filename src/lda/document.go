@@ -3,10 +3,10 @@ package lda
 import (
 	"bufio"
 	"errors"
-	"io"
-	// "encoding/line"
 	"fmt"
+	"io"
 	"os"
+	"regexp"
 	"sort"
 	"strings"
 )
@@ -70,6 +70,7 @@ func (iter *WordIterator) Next() {
 			iter.doc.wordtopics_indices[iter.unique_word_index+1] {
 		iter.unique_word_index++
 	}
+
 }
 
 func (iter WordIterator) Topic() int {
@@ -102,6 +103,12 @@ func (iter WordIterator) Word() string {
 	return iter.doc.unique_words[iter.unique_word_index]
 }
 
+var SymbolsRegexp *regexp.Regexp = regexp.MustCompile(";|\\.|,|\\?|!|\"|:")
+
+func RemoveTailingSymbols(word string) string {
+	return SymbolsRegexp.ReplaceAllString(word, "")
+}
+
 // Parse a text string, words seprated by whitespaces, and create a
 // Document instance.  In order to initialize topic_histogram, this
 // function requires the number_of_topics.
@@ -110,7 +117,7 @@ func NewDocument(text string, num_topics int) (doc *Document, err error) {
 		return nil, errors.New("num_topics must be >= 2")
 	}
 
-	words := strings.Fields(text)
+	words := strings.Fields(strings.ToLower(RemoveTailingSymbols(text)))
 	if len(words) <= 1 {
 		return nil, errors.New("Document less than 2 words:" + text)
 	}
@@ -127,8 +134,11 @@ func NewDocument(text string, num_topics int) (doc *Document, err error) {
 	for i := 0; i < len(words); i++ {
 		if words[i] != prev_word {
 			prev_word = words[i]
-			doc.unique_words = append(doc.unique_words, prev_word)
+			doc.unique_words = append(doc.unique_words, words[i])
 			doc.wordtopics_indices = append(doc.wordtopics_indices, i)
+		} else {
+			doc.wordtopics_indices = append(doc.wordtopics_indices,
+				doc.wordtopics_indices[len(doc.wordtopics_indices)-1])
 		}
 	}
 
@@ -140,7 +150,7 @@ func NewDocument(text string, num_topics int) (doc *Document, err error) {
 
 func (d Document) IsValid() bool {
 	return len(d.unique_words) >= 1 &&
-		len(d.wordtopics_indices) == len(d.unique_words) &&
+		len(d.wordtopics_indices) == len(d.wordtopics) &&
 		len(d.wordtopics) >= 2 &&
 		len(d.topic_histogram) >= 2
 }
@@ -170,7 +180,7 @@ func LoadCorpus(filename string, num_topics int) (corpus *Corpus, err error) {
 			return nil, errors.New("Encountered a long line:" + line)
 		}
 
-		if len(l) > 1 { // skip empty lines
+		if len(l) > 15 { // skip short lines
 			doc, err := NewDocument(line, num_topics)
 			if err == nil {
 				*corpus = append(*corpus, doc)

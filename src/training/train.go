@@ -64,14 +64,16 @@ func main() {
 
 	rand.Seed(time.Now().UTC().UnixNano())
 
-	corpus, err := lda.LoadCorpus(*corpus_file, 2)
+	corpus, err := lda.LoadCorpus(*corpus_file, *num_topics)
 	if err != nil {
 		fmt.Printf("Error in loading: " + *corpus_file + ", due to " + err.Error())
 		return
 	}
 
 	model := lda.CreateModel(*num_topics, corpus)
+
 	accum_model := lda.NewModel(*num_topics)
+
 	sampler := lda.NewSampler(*topic_prior, *word_prior, model, accum_model)
 
 	for iter := 0; iter < *burn_in_iterations+*accumulate_iterations; iter++ {

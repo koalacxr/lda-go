@@ -3,9 +3,8 @@ package lda
 import (
 	"bufio"
 	"errors"
-	"io"
-	// "encoding/line"
 	"fmt"
+	"io"
 	"os"
 	"strconv"
 	"strings"

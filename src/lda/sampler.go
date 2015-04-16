@@ -18,6 +18,7 @@ func NewSampler(topic_prior float64, word_prior float64, model *Model, accum_mod
 
 func (sampler *Sampler) GenerateTopicDistributionForWord(doc *Document,
 	word string, target_topic int, update_model bool) Distribution {
+
 	num_topics := sampler.model.NumTopics()
 	num_words := sampler.model.NumWords()
 	distribution := NewDistribution(num_topics)
